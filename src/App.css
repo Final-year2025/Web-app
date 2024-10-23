@@ -1,8 +1,18 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  height: 100vh; /* Use the full height of the viewport */
+  width: 100vw; /* Use the full width of the viewport */
+  max-width: none; /* Remove max-width to allow full width */
+  margin: 0; /* Remove margin to occupy full space */
+  padding: 0; /* Remove padding to occupy full space */
+  display: flex;
+  flex-direction: column; /* Allow flex layout for children */
+  align-items: center; /* Center children horizontally */
+  justify-content: center; /* Center children vertically */
+  background-color: hsl(var(--background)); /* Ensure background is consistent */
+}
+
+.flex-grow {
+  flex-grow: 1; /* Allow main content to grow and fill space */
 }
 
 .logo {
@@ -11,9 +21,11 @@
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }

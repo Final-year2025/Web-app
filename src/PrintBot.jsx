@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
-import { QrCode, FileText, Send } from 'lucide-react';
+import { FileText, Send } from 'lucide-react';
 
 export default function PrintBot() {
   const [messages, setMessages] = useState([
@@ -11,7 +10,6 @@ export default function PrintBot() {
   const [pages, setPages] = useState('');
   const [color, setColor] = useState('');
   const [step, setStep] = useState(0);
-  const [showQR, setShowQR] = useState(false);
   const fileInputRef = useRef(null);
   const chatEndRef = useRef(null);
 
@@ -27,32 +25,51 @@ export default function PrintBot() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (inputValue.trim() !== '') {
-      addMessage(inputValue, 'user');
-      setInputValue('');
-      
-      if (step === 1) {
-        setPages(inputValue);
+    
+    if (inputValue.trim() === '') {
+      addMessage("Please provide a valid response.", 'bot');
+      return;
+    }
+
+    addMessage(inputValue, 'user');
+    setInputValue('');
+
+    if (step === 1) {
+      const pagesInput = parseInt(inputValue, 10);
+      if (isNaN(pagesInput) || pagesInput <= 0) {
+        addMessage("Please enter a valid number of pages.", 'bot');
+      } else {
+        setPages(pagesInput);
         setStep(2);
         setTimeout(() => addMessage("Would you like color or black and white copies?", 'bot'), 1000);
-      } else if (step === 2) {
-        setColor(inputValue);
+      }
+    } else if (step === 2) {
+      const colorInput = inputValue.toLowerCase();
+      if (colorInput !== 'color' && colorInput !== 'black and white') {
+        addMessage("Please specify either 'Color' or 'black and white' Copies.", 'bot');
+      } else {
+        setColor(colorInput);
         setStep(3);
         setTimeout(() => {
           addMessage(`Great! I'll print ${pages} pages of your document "${file?.name}" in ${color}. Is that correct?`, 'bot');
         }, 1000);
-      } else if (step === 3) {
-        if (inputValue.toLowerCase().includes('yes')) {
-          setTimeout(() => addMessage("Perfect! Your print job has been sent. You can pick it up at the counter.", 'bot'), 1000);
-        } else {
-          setTimeout(() => addMessage("I'm sorry, let's start over. Please upload your document again.", 'bot'), 1000);
-          setStep(0);
-          setFile(null);
-          setPages('');
-          setColor('');
-        }
+      }
+    } else if (step === 3) {
+      if (inputValue.toLowerCase().includes('yes')) {
+        setTimeout(() => addMessage("Perfect! Your print job has been sent. You can pick it up at the counter.", 'bot'), 1000);
+      } else {
+        setTimeout(() => addMessage("I'm sorry, let's start over. Please upload your document again.", 'bot'), 1000);
+        resetConversation();
       }
     }
+  };
+
+  const resetConversation = () => {
+    setStep(0);
+    setFile(null);
+    setPages('');
+    setColor('');
+    setMessages([{ text: "Welcome! Please upload your PDF or document for printing.", sender: 'bot' }]);
   };
 
   const addMessage = (text, sender, isFile = false) => {
@@ -64,47 +81,40 @@ export default function PrintBot() {
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto bg-gray-100">
-      <div className="flex justify-between items-center p-4 bg-blue-600 text-white">
-        <h1 className="text-xl font-bold">PrintBot</h1>
-        <button onClick={() => setShowQR(!showQR)} className="p-2 bg-blue-700 rounded-full">
-          <QrCode className="h-4 w-4" />
-        </button>
+    <div className="flex flex-col h-screen max-w-md mx-auto bg-gray-50 md:max-w-lg shadow-lg rounded-lg overflow-hidden">
+      {/* Header */}
+      <div className="flex justify-between items-center p-4 bg-violet-600 text-white w-full">
+        <h1 className="text-lg sm:text-xl font-bold">Ezprints 2.0</h1>
       </div>
-      {showQR && (
-        <div className="absolute top-16 right-4 bg-white p-4 rounded-lg shadow-md">
-          <QRCodeSVG value={window.location.href} size={128} />
-        </div>
-      )}
+
+      {/* Chat Area */}
       <div className="flex-grow p-4 overflow-y-auto">
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`mb-4 ${
-              message.sender === 'bot' ? 'text-left' : 'text-right'
-            }`}
+            className={`mb-4 ${message.sender === 'bot' ? 'text-left' : 'text-right'}`}
           >
             <div
-              className={`inline-block p-2 rounded-lg ${
-                message.sender === 'bot'
-                  ? 'bg-gray-200 text-gray-800'
-                  : 'bg-blue-600 text-white'
+              className={`inline-block p-3 rounded-lg max-w-[80%] md:max-w-[70%] ${
+                message.sender === 'bot' ? 'bg-gray-200 text-gray-800' : 'bg-violet-600 text-white'
               }`}
             >
               {message.isFile ? (
                 <div className="flex items-center">
-                  <FileText className="w-4 h-4 mr-2" />
-                  {message.text}
+                  <FileText className="w-5 h-5 mr-2" />
+                  <span className="text-sm md:text-base">{message.text}</span>
                 </div>
               ) : (
-                message.text
+                <span className="text-sm md:text-base">{message.text}</span>
               )}
             </div>
           </div>
         ))}
         <div ref={chatEndRef} />
       </div>
-      <form onSubmit={handleSubmit} className="p-4 bg-white">
+
+      {/* Input Section */}
+      <form onSubmit={handleSubmit} className="p-4 bg-white w-full flex-shrink-0">
         {step === 0 ? (
           <div>
             <input
@@ -117,7 +127,7 @@ export default function PrintBot() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+              className="w-full bg-violet-600 text-white py-3 px-4 rounded-md hover:bg-violet-700 transition-colors text-center"
             >
               Upload Document
             </button>
@@ -129,10 +139,10 @@ export default function PrintBot() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Type your message..."
-              className="flex-grow mr-2 p-2 border rounded-md"
+              className="flex-grow mr-2 p-3 border rounded-md text-sm md:text-base"
             />
-            <button type="submit" className="bg-blue-600 text-white p-2 rounded-md">
-              <Send className="h-4 w-4" />
+            <button type="submit" className="bg-violet-600 text-white p-3 rounded-md">
+              <Send className="h-5 w-5 md:h-6 md:w-6" />
             </button>
           </div>
         )}
